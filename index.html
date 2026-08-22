@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="제목과 내용을 남기고 같은 브라우저에 안전하게 보관하는 로컬 게시판"
+    />
+    <title>은직이의 게시판</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="site-header" aria-label="게시판 소개">
+        <a class="brand" href="./" aria-label="은직이의 게시판 홈">
+          <span class="logo-frame">
+            <img class="inu-logo" src="inu-logo.png" alt="인천대학교" />
+          </span>
+          <span class="brand-divider" aria-hidden="true"></span>
+          <span>은직이의 게시판</span>
+        </a>
+        <span class="local-badge"><span aria-hidden="true">●</span> 나만의 로컬 보드</span>
+      </header>
+
+      <main>
+        <section class="intro-section" aria-labelledby="page-title">
+          <div class="eyebrow"><span></span> SMALL NOTES, BIG IDEAS</div>
+          <h1 id="page-title">은직이의<br /><em>게시판</em></h1>
+          <p class="intro-copy">
+            제목과 내용을 간단히 남기고 게시판 목록에서 확인해 보세요.<br />
+            작성한 글은 이 브라우저에만 안전하게 보관됩니다.
+          </p>
+        </section>
+
+        <section class="write-card" aria-labelledby="write-title">
+          <div class="card-heading">
+            <div>
+              <p class="section-label">NEW NOTE</p>
+              <h2 id="write-title">새 글 작성</h2>
+            </div>
+            <span class="card-number" aria-hidden="true">01</span>
+          </div>
+
+          <form id="post-form" class="post-form">
+            <div class="field-group">
+              <label for="post-title">제목</label>
+              <input
+                id="post-title"
+                name="title"
+                type="text"
+                maxlength="100"
+                placeholder="어떤 이야기를 남겨볼까요?"
+                autocomplete="off"
+                required
+              />
+            </div>
+
+            <div class="field-group">
+              <label for="post-content">내용</label>
+              <textarea
+                id="post-content"
+                name="content"
+                rows="5"
+                maxlength="2000"
+                placeholder="오늘의 생각을 자유롭게 적어보세요."
+                required
+              ></textarea>
+              <span class="field-hint">최대 2,000자</span>
+            </div>
+
+            <div class="form-footer">
+              <p id="form-message" class="form-message" role="status" aria-live="polite"></p>
+              <button class="submit-button" type="submit">
+                <span>기록 남기기</span>
+                <span class="button-arrow" aria-hidden="true">→</span>
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <section class="notes-section" aria-labelledby="notes-title">
+          <div class="notes-heading">
+            <div>
+              <p class="section-label">BOARD LIST</p>
+              <h2 id="notes-title">게시판 목록</h2>
+            </div>
+            <span id="post-count" class="post-count" aria-live="polite">0개의 기록</span>
+          </div>
+
+          <div id="empty-state" class="empty-state">
+            <div class="empty-icon" aria-hidden="true">✦</div>
+            <h3>아직 남겨진 기록이 없어요.</h3>
+            <p>첫 번째 생각을 남겨보세요.</p>
+          </div>
+
+          <div id="post-list" class="post-list" aria-live="polite"></div>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <span>LOCAL BOARD</span>
+        <span>브라우저에만 저장됩니다 · 인터넷에 공개되지 않아요</span>
+      </footer>
+    </div>
+  </body>
+</html>
