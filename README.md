@@ -4,20 +4,30 @@
 
 ## 실행 방법
 
-`index.html`을 브라우저에서 열거나, 프로젝트 폴더에서 다음 명령으로 로컬 서버를 실행합니다.
+Cloudflare Pages Functions와 D1을 함께 테스트하려면 프로젝트 폴더에서 다음 명령을 실행합니다.
 
 ```powershell
-node -e "const http=require('http'),fs=require('fs'),path=require('path'); const root=process.cwd(); const types={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.png':'image/png'}; http.createServer((req,res)=>{const requestPath=decodeURIComponent((req.url||'/').split('?')[0]); const relative=requestPath==='/'?'index.html':requestPath.slice(1); const file=path.resolve(root,relative); if(!file.startsWith(root+path.sep)){res.writeHead(403); return res.end('Forbidden');} fs.readFile(file,(err,data)=>{if(err){res.writeHead(404); return res.end('Not found');} res.writeHead(200,{'Content-Type':types[path.extname(file)]||'application/octet-stream'}); res.end(data);});}).listen(8000,'127.0.0.1',()=>console.log('http://127.0.0.1:8000'));"
+npx wrangler pages dev .
 ```
 
-접속 주소는 <http://127.0.0.1:8000>입니다.
+기본 접속 주소는 <http://localhost:8788>입니다.
 
 ## 데이터 저장
 
-- 게시글은 `simple-board-posts`라는 `localStorage` 항목에 저장됩니다.
-- 같은 브라우저에서 새로고침해도 게시글이 유지됩니다.
-- 게시글은 서버나 GitHub에 자동 업로드되지 않습니다.
-- 브라우저 저장 데이터를 삭제하면 게시글도 사라질 수 있습니다.
+- 게시글은 Cloudflare D1의 `posts` 테이블에 저장됩니다.
+- `localStorage`는 사용하지 않으므로, 모든 방문자가 같은 게시글 목록을 공유합니다.
+- 기존 브라우저에 남아 있는 이전 `localStorage` 게시글은 자동으로 데이터베이스로 옮겨지지 않습니다.
+- 게시글 삭제는 현재 별도 로그인 없이 가능한 단순 게시판 동작입니다. 공개 운영 전에는 관리자 인증을 추가하는 것을 권장합니다.
+
+## Cloudflare D1 연결
+
+1. `npx wrangler@latest login`으로 Cloudflare에 로그인합니다.
+2. `my-board-db` D1 데이터베이스를 만들고 `wrangler.toml`에 `DB` 바인딩을 설정합니다.
+3. `npx wrangler@latest d1 migrations apply my-board-db --remote`로 `posts` 테이블을 만듭니다.
+4. Cloudflare Pages 프로젝트의 Functions에 `DB`라는 이름으로 해당 D1 데이터베이스를 바인딩합니다.
+5. Pages 프로젝트를 다시 배포합니다.
+
+Cloudflare Pages Functions는 `/functions` 폴더의 API를 실행하고, D1 바인딩은 `context.env.DB`로 사용합니다.
 
 ## GitHub에 저장할 때
 

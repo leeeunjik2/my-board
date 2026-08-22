@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const STORAGE_KEY = "simple-board-posts";
+  const API_URL = "/api/posts";
   const form = document.querySelector("#post-form");
   const titleInput = document.querySelector("#post-title");
   const contentInput = document.querySelector("#post-content");
@@ -10,11 +10,21 @@
   const emptyState = document.querySelector("#empty-state");
   const postCount = document.querySelector("#post-count");
 
-  let posts = loadPosts();
+  let posts = [];
 
-  renderPosts();
+  initialize();
 
-  form.addEventListener("submit", (event) => {
+  async function initialize() {
+    try {
+      posts = await requestPosts();
+      renderPosts();
+    } catch (error) {
+      renderPosts();
+      showMessage(error.message || "게시글을 불러오지 못했습니다.");
+    }
+  }
+
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
 
     const title = titleInput.value.trim();
@@ -30,22 +40,27 @@
       return;
     }
 
-    const newPost = {
-      id: createId(),
-      title,
-      content,
-      createdAt: new Date().toISOString(),
-    };
+    setFormDisabled(true);
 
-    posts = [newPost, ...posts];
-    savePosts();
-    renderPosts();
-    form.reset();
-    showMessage("새 기록이 저장되었습니다.", true);
-    titleInput.focus();
+    try {
+      const newPost = await request(API_URL, {
+        method: "POST",
+        body: JSON.stringify({ title, content }),
+      });
+
+      posts = [newPost, ...posts];
+      renderPosts();
+      form.reset();
+      showMessage("새 게시글이 저장되었습니다.", true);
+      titleInput.focus();
+    } catch (error) {
+      showMessage(error.message || "게시글을 저장하지 못했습니다.");
+    } finally {
+      setFormDisabled(false);
+    }
   });
 
-  postList.addEventListener("click", (event) => {
+  postList.addEventListener("click", async (event) => {
     const deleteButton = event.target.closest("[data-delete-id]");
 
     if (!deleteButton) {
@@ -59,48 +74,43 @@
       return;
     }
 
-    posts = posts.filter((item) => item.id !== postId);
-    savePosts();
-    renderPosts();
-    showMessage("기록이 삭제되었습니다.", true);
+    deleteButton.disabled = true;
+
+    try {
+      await request(`${API_URL}?id=${encodeURIComponent(postId)}`, {
+        method: "DELETE",
+      });
+
+      posts = posts.filter((item) => item.id !== postId);
+      renderPosts();
+      showMessage("게시글이 삭제되었습니다.", true);
+    } catch (error) {
+      deleteButton.disabled = false;
+      showMessage(error.message || "게시글을 삭제하지 못했습니다.");
+    }
   });
 
-  function loadPosts() {
-    try {
-      const storedPosts = window.localStorage.getItem(STORAGE_KEY);
-      const parsedPosts = storedPosts ? JSON.parse(storedPosts) : [];
-
-      if (!Array.isArray(parsedPosts)) {
-        return [];
-      }
-
-      return parsedPosts
-        .filter(isValidPost)
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    } catch (error) {
-      console.warn("저장된 기록을 불러오지 못했습니다.", error);
-      return [];
-    }
+  async function requestPosts() {
+    const result = await request(API_URL);
+    return Array.isArray(result.posts) ? result.posts : [];
   }
 
-  function isValidPost(post) {
-    return Boolean(
-      post &&
-        typeof post.id === "string" &&
-        typeof post.title === "string" &&
-        typeof post.content === "string" &&
-        typeof post.createdAt === "string" &&
-        !Number.isNaN(new Date(post.createdAt).getTime()),
-    );
-  }
+  async function request(url, options = {}) {
+    const response = await fetch(url, {
+      headers: {
+        "Content-Type": "application/json",
+        ...(options.headers || {}),
+      },
+      ...options,
+    });
 
-  function savePosts() {
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(posts));
-    } catch (error) {
-      showMessage("저장 공간에 접근할 수 없습니다. 브라우저 설정을 확인해 주세요.");
-      console.warn("기록을 저장하지 못했습니다.", error);
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(result.error || "요청을 처리하지 못했습니다.");
     }
+
+    return result;
   }
 
   function renderPosts() {
@@ -163,12 +173,10 @@
     }).format(new Date(dateString));
   }
 
-  function createId() {
-    if (window.crypto && typeof window.crypto.randomUUID === "function") {
-      return window.crypto.randomUUID();
-    }
-
-    return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  function setFormDisabled(disabled) {
+    form.querySelectorAll("input, textarea, button").forEach((element) => {
+      element.disabled = disabled;
+    });
   }
 
   function showMessage(message, isSuccess = false) {

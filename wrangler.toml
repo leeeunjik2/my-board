@@ -1,0 +1,9 @@
+name = "my-board"
+pages_build_output_dir = "."
+compatibility_date = "2026-08-22"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "my-board-db"
+database_id = "8e4c48da-6618-4f57-87ef-3f230d66ffcb"
+migrations_dir = "migrations"
