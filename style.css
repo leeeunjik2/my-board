@@ -406,6 +406,57 @@ textarea:focus {
   white-space: pre-wrap;
 }
 
+.post-reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 17px;
+}
+
+.reaction-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 47px;
+  min-height: 31px;
+  padding: 4px 9px;
+  border: 1px solid var(--soft-line);
+  border-radius: 16px;
+  background: #fcfcfa;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.reaction-button:hover {
+  border-color: var(--accent-dark);
+  background: #f7fbdc;
+  transform: translateY(-1px);
+}
+
+.reaction-button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.reaction-button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.reaction-emoji {
+  line-height: 1;
+}
+
+.reaction-count {
+  min-width: 1ch;
+  color: #8d887e;
+  font-family: "DM Sans", sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
 .post-meta {
   align-items: center;
   gap: 15px;

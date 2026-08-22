@@ -7,14 +7,17 @@
 Cloudflare Pages Functions와 D1을 함께 테스트하려면 프로젝트 폴더에서 다음 명령을 실행합니다.
 
 ```powershell
+npx wrangler d1 migrations apply my-board-db --local
 npx wrangler pages dev .
 ```
 
 기본 접속 주소는 <http://localhost:8788>입니다.
+`index.html`을 직접 열거나 기존 정적 서버로 `8000` 포트를 열면 Pages Functions와 D1 API가 실행되지 않으므로 게시글 등록이 동작하지 않습니다.
 
 ## 데이터 저장
 
 - 게시글은 Cloudflare D1의 `posts` 테이블에 저장됩니다.
+- 이모지 반응은 D1의 `post_reactions` 테이블에 저장됩니다.
 - `localStorage`는 사용하지 않으므로, 모든 방문자가 같은 게시글 목록을 공유합니다.
 - 기존 브라우저에 남아 있는 이전 `localStorage` 게시글은 자동으로 데이터베이스로 옮겨지지 않습니다.
 - 게시글 삭제는 현재 별도 로그인 없이 가능한 단순 게시판 동작입니다. 공개 운영 전에는 관리자 인증을 추가하는 것을 권장합니다.

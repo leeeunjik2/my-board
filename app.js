@@ -2,6 +2,7 @@
   "use strict";
 
   const API_URL = "/api/posts";
+  const REACTION_EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🎉"];
   const form = document.querySelector("#post-form");
   const titleInput = document.querySelector("#post-title");
   const contentInput = document.querySelector("#post-content");
@@ -61,6 +62,13 @@
   });
 
   postList.addEventListener("click", async (event) => {
+    const reactionButton = event.target.closest("[data-react-post-id]");
+
+    if (reactionButton) {
+      await addReaction(reactionButton);
+      return;
+    }
+
     const deleteButton = event.target.closest("[data-delete-id]");
 
     if (!deleteButton) {
@@ -90,23 +98,71 @@
     }
   });
 
+  async function addReaction(reactionButton) {
+    const postId = reactionButton.dataset.reactPostId;
+    const emoji = reactionButton.dataset.emoji;
+    const post = posts.find((item) => item.id === postId);
+
+    if (!post || !REACTION_EMOJIS.includes(emoji)) {
+      return;
+    }
+
+    reactionButton.disabled = true;
+
+    try {
+      const result = await request(API_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "react", postId, emoji }),
+      });
+
+      const currentReaction = (post.reactions || []).find(
+        (reaction) => reaction.emoji === emoji,
+      );
+
+      if (currentReaction) {
+        currentReaction.count = result.count;
+      } else {
+        post.reactions = [...(post.reactions || []), { emoji, count: result.count }];
+      }
+
+      renderPosts();
+    } catch (error) {
+      reactionButton.disabled = false;
+      showMessage(error.message || "이모지 반응을 저장하지 못했습니다.");
+    }
+  }
+
   async function requestPosts() {
     const result = await request(API_URL);
     return Array.isArray(result.posts) ? result.posts : [];
   }
 
   async function request(url, options = {}) {
-    const response = await fetch(url, {
-      headers: {
-        "Content-Type": "application/json",
-        ...(options.headers || {}),
-      },
-      ...options,
-    });
+    let response;
+
+    try {
+      response = await fetch(url, {
+        ...options,
+        headers: {
+          "Content-Type": "application/json",
+          ...(options.headers || {}),
+        },
+      });
+    } catch {
+      throw new Error(
+        "서버에 연결할 수 없습니다. 로컬에서는 `npx wrangler pages dev .`로 실행해 주세요.",
+      );
+    }
 
     const result = await response.json().catch(() => ({}));
 
     if (!response.ok) {
+      if (response.status === 404) {
+        throw new Error(
+          "게시판 API를 찾을 수 없습니다. 로컬에서는 `npx wrangler pages dev .`로 실행해 주세요.",
+        );
+      }
+
       throw new Error(result.error || "요청을 처리하지 못했습니다.");
     }
 
@@ -154,9 +210,36 @@
       time.dateTime = post.createdAt;
       time.textContent = formatDate(post.createdAt);
 
+      const reactions = document.createElement("div");
+      reactions.className = "post-reactions";
+      reactions.setAttribute("aria-label", "이모지 반응");
+
+      REACTION_EMOJIS.forEach((emoji) => {
+        const reaction = (post.reactions || []).find(
+          (item) => item.emoji === emoji,
+        );
+        const reactionButton = document.createElement("button");
+        reactionButton.className = "reaction-button";
+        reactionButton.type = "button";
+        reactionButton.dataset.reactPostId = post.id;
+        reactionButton.dataset.emoji = emoji;
+        reactionButton.setAttribute("aria-label", `${emoji} 반응 추가`);
+
+        const emojiLabel = document.createElement("span");
+        emojiLabel.className = "reaction-emoji";
+        emojiLabel.textContent = emoji;
+
+        const reactionCount = document.createElement("span");
+        reactionCount.className = "reaction-count";
+        reactionCount.textContent = String(reaction?.count || 0);
+
+        reactionButton.append(emojiLabel, reactionCount);
+        reactions.append(reactionButton);
+      });
+
       heading.append(title, deleteButton);
       meta.append(time);
-      article.append(heading, content, meta);
+      article.append(heading, content, reactions, meta);
       fragment.append(article);
     });
 
